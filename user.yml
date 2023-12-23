@@ -1,0 +1,70 @@
+- name: user
+  hosts: user
+  become: yes
+  tasks:
+    - name: disable and enable required nodejs version 
+      ansible.builtin.shell: dnf module disable nodejs -y ; dnf module enable nodejs:18 -y
+
+    - name: installing nodeJS
+      ansible.builtin.dnf:
+        name: nodejs
+        state: present
+
+    - name: Adding user
+      ansible.builtin.user:
+        name: roboshop
+
+    - name: Making app directory
+      ansible.builtin.file:
+        name: /app
+        state: directory
+
+    - name: download user application
+      ansible.builtin.get_url: 
+        url: https://roboshop-artifacts.s3.amazonaws.com/user.zip 
+        dest: /tmp
+
+    - name: Extracting the application
+      ansible.builtin.unarchive:
+        src: /tmp/user.zip
+        dest: /app
+        remote_src: yes
+
+    - name: install dependencies
+      ansible.builtin.command: npm install
+      args:
+        chdir: /app
+
+    - name: copying user service
+      ansible.builtin.copy:
+        src: user.service
+        dest: /etc/systemd/system/user.service
+
+    - name: Daemon reload and start
+      ansible.builtin.systemd_service:
+      daemon_reload: true
+
+    - name: copy mongodb repo
+      ansible.builtin.copy:
+        src: mongodb.repo
+        dest: /etc/yum.repos.d/mongo.repo
+
+    - name: install mongodb client
+      ansible.builtin.dnf:
+        name: mongodb-org-shell
+        state: present
+    
+    - name: get the categories count
+      ansible.builtin.command:  mongo --host mongodb.mksdevops.online --quiet --eval 'db = db.getSiblingDB("catalogue"); db.products.count()'
+      register: product_count
+
+    - name: load catalogue data
+      ansible.builtin.command: mongo --host mongodb.mksdevops.online < /app/schema/catalogue.js
+      when: product_count.stdout == 0
+
+    - name: start and enable user service
+      ansible.builtin.service:
+        name: user
+        state: restarted
+        enabled: yes
+
