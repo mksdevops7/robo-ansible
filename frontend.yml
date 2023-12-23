@@ -1,0 +1,41 @@
+- name: forntend
+  hosts: forntend
+  become: yes
+  tasks:
+    - name: installing nginx
+      ansible.builtin.dnf:
+        name: ngixnx
+        state: present
+
+    - name: start and enable nginx server
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: removing default content from nginx
+      ansible.builtin.file:
+        path: /usr/share/nginx/html/* 
+        state: absent
+
+    - name: downloading forntend content
+      ansible.builtin.get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/frontend.zip 
+        dest: /tmp
+
+    - name: unzip the content
+      ansible.builtin.unarchive:
+        src: /tmp/frontend.zip
+        dest: /usr/share/nginx/html
+        remote_src: yes
+
+    - name: copy roboshop nginx configuration
+      ansible.builtin.copy:
+        src: roboshop.conf
+        dest: /etc/nginx/default.d/roboshop.conf
+
+    - name: Restart Nginx Service
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
