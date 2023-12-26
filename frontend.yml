@@ -18,14 +18,14 @@
         path: /usr/share/nginx/html/* 
         state: absent
 
-    - name: downloading forntend content
+    - name: downloading web content
       ansible.builtin.get_url:
-        url: https://roboshop-artifacts.s3.amazonaws.com/frontend.zip 
+        url: https://roboshop-artifacts.s3.amazonaws.com/web.zip 
         dest: /tmp
 
     - name: unzip the content
       ansible.builtin.unarchive:
-        src: /tmp/frontend.zip
+        src: /tmp/web.zip
         dest: /usr/share/nginx/html
         remote_src: yes
 
