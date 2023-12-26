@@ -38,7 +38,7 @@
         chdir: /app
 
     - name: Copy dispatch service
-      nsible.builtin.copy:
+      ansible.builtin.copy:
         src: dispatch.service
         dest: /etc/systemd/system/dispatch.service
 
